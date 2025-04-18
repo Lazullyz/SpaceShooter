@@ -9,7 +9,7 @@ apply plugin: 'com.android.application'
 
 
 android {
-  namespace "br.unip.waterguardians"
+  namespace "ca.grasley.spaceshooter"
   compileSdk 35
   sourceSets {
     main {
@@ -31,7 +31,7 @@ android {
 		}
   }
   defaultConfig {
-    applicationId 'br.unip.waterguardians'
+    applicationId 'ca.grasley.spaceshooter'
     minSdkVersion 19
     targetSdkVersion 35
     versionCode 1
@@ -63,6 +63,10 @@ dependencies {
   implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
   implementation project(':core')
 
+  natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-arm64-v8a"
+  natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi-v7a"
+  natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86"
+  natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86_64"
   natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"
   natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
   natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
@@ -120,7 +124,7 @@ tasks.register('run', Exec) {
   }
 
   def adb = path + "/platform-tools/adb"
-  commandLine "$adb", 'shell', 'am', 'start', '-n', 'br.unip.waterguardians/br.unip.waterguardians.android.AndroidLauncher'
+  commandLine "$adb", 'shell', 'am', 'start', '-n', 'ca.grasley.spaceshooter/ca.grasley.spaceshooter.android.AndroidLauncher'
 }
 
 eclipse.project.name = appName + "-android"
