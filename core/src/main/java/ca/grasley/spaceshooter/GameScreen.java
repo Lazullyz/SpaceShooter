@@ -44,7 +44,7 @@ class GameScreen implements Screen {
     //timing
     private float[] backgroundOffsets = {0, 0, 0, 0};
     private float backgroundMaxScrollingSpeed;
-    private float timeBetweenEnemySpawns = 1f;
+    private float timeBetweenEnemySpawns = 2f;
     private float enemySpawnTimer = 0;
 
     //world parameters
@@ -151,6 +151,7 @@ class GameScreen implements Screen {
 
         spawnEnemyShips(deltaTime);
 
+
         ListIterator<EnemyShip> enemyShipListIterator = enemyShipList.listIterator();
         while (enemyShipListIterator.hasNext()) {
             EnemyShip enemyShip = enemyShipListIterator.next();
@@ -192,9 +193,9 @@ class GameScreen implements Screen {
 
         if (enemySpawnTimer > timeBetweenEnemySpawns) {
             enemyShipList.add(new EnemyShip(SpaceShooterGame.random.nextFloat() * (WORLD_WIDTH - 10) + 5,
-                    WORLD_HEIGHT - 5,
+                    WORLD_HEIGHT +10,
                     10, 10,
-                    48, 1,
+                    20, 1,
                     0.3f, 5, 50, 0.8f,
                     enemyShipTextureRegion, enemyShieldTextureRegion, enemyLaserTextureRegion));
             enemySpawnTimer -= timeBetweenEnemySpawns;
@@ -268,7 +269,7 @@ class GameScreen implements Screen {
 
         float leftLimit, rightLimit, upLimit, downLimit;
         leftLimit = -enemyShip.boundingBox.x;
-        downLimit = (float) WORLD_HEIGHT / 2 - enemyShip.boundingBox.y;
+        downLimit = -enemyShip.boundingBox.height;
         rightLimit = WORLD_WIDTH - enemyShip.boundingBox.x - enemyShip.boundingBox.width;
         upLimit = WORLD_HEIGHT - enemyShip.boundingBox.y - enemyShip.boundingBox.height;
 
@@ -320,7 +321,7 @@ class GameScreen implements Screen {
                                     new Rectangle(playerShip.boundingBox),
                                     1.6f));
                     playerShip.shield = 10;
-                    playerShip.lives--; 
+                    playerShip.lives--;
                 }
                 laserListIterator.remove();
             }

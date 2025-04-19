@@ -7,8 +7,7 @@ import com.badlogic.gdx.math.Vector2;
 class EnemyShip extends Ship {
 
     Vector2 directionVector;
-    float timeSinceLastDirectionChange = 0 ;
-    float directionChangeFrequency = 0.75f;
+
 
 
     public EnemyShip(float xCentre, float yCentre,
@@ -37,26 +36,14 @@ class EnemyShip extends Ship {
     @Override
     public void update(float deltaTime) {
         super.update(deltaTime);
-        timeSinceLastDirectionChange += deltaTime;
-        if (timeSinceLastDirectionChange > directionChangeFrequency) {
-            randomizeDirectionVector();
-            timeSinceLastDirectionChange -= directionChangeFrequency;
-        }
+            boundingBox.y += directionVector.y * movementSpeed * deltaTime;
+            if (boundingBox.y + boundingBox.height < 0) {
+            }
     }
 
     @Override
     public Laser[] fireLasers() {
-        Laser[] laser = new Laser[2];
-        laser[0] = new Laser(boundingBox.x + boundingBox.width * 0.18f, boundingBox.y - laserHeight,
-                laserWidth, laserHeight,
-                laserMovementSpeed, laserTextureRegion);
-        laser[1] = new Laser(boundingBox.x + boundingBox.width * 0.82f, boundingBox.y - laserHeight,
-                laserWidth, laserHeight,
-                laserMovementSpeed, laserTextureRegion);
-
-        timeSinceLastShot = 0;
-
-        return laser;
+        return new Laser[0];
     }
 
     @Override
