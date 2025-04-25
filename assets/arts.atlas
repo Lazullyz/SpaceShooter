@@ -1,0 +1,19 @@
+arts.png
+size:4096,2048
+repeat:none
+Lixo01
+bounds:320,0,320,320
+Lixo02
+bounds:320,320,320,320
+Metal
+bounds:0,0,320,320
+RedePesca
+bounds:640,320,320,320
+SpriteBarco
+bounds:640,0,320,320
+Tronco
+bounds:0,320,320,320
+fase 1
+bounds:1920,640,1920,1280
+fase 2
+bounds:0,640,1920,1280

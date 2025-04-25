@@ -32,6 +32,7 @@ class GameScreen implements Screen {
     //graphics
     private SpriteBatch batch;
     private TextureAtlas textureAtlas;
+    private TextureAtlas texturePixels;
     private Texture explosionTexture;
 
     private TextureRegion[] backgrounds;
@@ -72,6 +73,7 @@ class GameScreen implements Screen {
 
         //set up the texture atlas
         textureAtlas = new TextureAtlas("images.atlas");
+        texturePixels = new TextureAtlas("arts.atlas");
 
         //setting up the background
         backgrounds = new TextureRegion[4];
@@ -84,8 +86,8 @@ class GameScreen implements Screen {
         backgroundMaxScrollingSpeed = (float) (WORLD_HEIGHT) / 4;
 
         //initialize texture regions
-        playerShipTextureRegion = textureAtlas.findRegion("playerShip2_blue");
-        enemyShipTextureRegion = textureAtlas.findRegion("enemyRed3");
+        playerShipTextureRegion = texturePixels.findRegion("SpriteBarco");
+        enemyShipTextureRegion = texturePixels.findRegion("Lixo01");
         playerShieldTextureRegion = textureAtlas.findRegion("shield2");
         enemyShieldTextureRegion = textureAtlas.findRegion("shield1");
         enemyShieldTextureRegion.flip(false, true);
