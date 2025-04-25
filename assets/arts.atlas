@@ -1,19 +1,21 @@
 arts.png
-size:4096,2048
+size:8192,2048
 repeat:none
 Lixo01
-bounds:320,0,320,320
-Lixo02
 bounds:320,320,320,320
-Metal
+Lixo02
 bounds:0,0,320,320
+Metal
+bounds:5760,1600,320,320
 RedePesca
-bounds:640,320,320,320
+bounds:5760,1280,320,320
 SpriteBarco
-bounds:640,0,320,320
+bounds:6080,1600,320,320
 Tronco
 bounds:0,320,320,320
 fase 1
-bounds:1920,640,1920,1280
+bounds:3840,640,1920,1280
 fase 2
+bounds:1920,640,1920,1280
+fase 3
 bounds:0,640,1920,1280

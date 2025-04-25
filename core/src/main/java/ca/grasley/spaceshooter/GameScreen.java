@@ -3,430 +3,293 @@ package ca.grasley.spaceshooter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.viewport.StretchViewport;
+import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.ListIterator;
-import java.util.Locale;
 
-class GameScreen implements Screen {
+public class GameScreen implements Screen {
+    private final float WORLD_WIDTH = 1280;
+    private final float WORLD_HEIGHT = 720;
+    private final int TRASH_TO_WIN = 30;
+    private final boolean DEBUG_MODE = false;
 
-    //screen
-    private Camera camera;
+    private OrthographicCamera camera;
     private Viewport viewport;
-
-    //graphics
     private SpriteBatch batch;
+    private ShapeRenderer shapeRenderer;
     private TextureAtlas textureAtlas;
-    private TextureAtlas texturePixels;
-    private Texture explosionTexture;
 
-    private TextureRegion[] backgrounds;
-    private float backgroundHeight; //height of background in World units
+    private Boat playerBoat;
+    private LinkedList<Trash> trashList;
+    private LinkedList<Obstacle> obstacleList;
 
-    private TextureRegion playerShipTextureRegion, playerShieldTextureRegion,
-            enemyShipTextureRegion, enemyShieldTextureRegion,
-            playerLaserTextureRegion, enemyLaserTextureRegion;
+    private int lives = 3;
+    private int collectedTrash = 0;
+    private float gameTime = 0;
+    private boolean gameOver = false;
+    private boolean playerWon = false;
 
-    //timing
-    private float[] backgroundOffsets = {0, 0, 0, 0};
-    private float backgroundMaxScrollingSpeed;
-    private float timeBetweenEnemySpawns = 2f;
-    private float enemySpawnTimer = 0;
+    private BitmapFont font;
 
-    //world parameters
-    private final float WORLD_WIDTH = 72;
-    private final float WORLD_HEIGHT = 128;
-    private final float TOUCH_MOVEMENT_THRESHOLD = 5f;
-
-    //game objects
-    private PlayerShip playerShip;
-    private LinkedList<EnemyShip> enemyShipList;
-    private LinkedList<Laser> playerLaserList;
-    private LinkedList<Laser> enemyLaserList;
-    private LinkedList<Explosion> explosionList;
-
-    private int score = 0;
-
-    //Heads-Up Display
-    BitmapFont font;
-    float hudVerticalMargin, hudLeftX, hudRightX, hudCentreX, hudRow1Y, hudRow2Y, hudSectionWidth;
-
-    GameScreen() {
-
+    public GameScreen() {
         camera = new OrthographicCamera();
-        viewport = new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
-
-        //set up the texture atlas
-        textureAtlas = new TextureAtlas("images.atlas");
-        texturePixels = new TextureAtlas("arts.atlas");
-
-        //setting up the background
-        backgrounds = new TextureRegion[4];
-        backgrounds[0] = textureAtlas.findRegion("Starscape00");
-        backgrounds[1] = textureAtlas.findRegion("Starscape01");
-        backgrounds[2] = textureAtlas.findRegion("Starscape02");
-        backgrounds[3] = textureAtlas.findRegion("Starscape03");
-
-        backgroundHeight = WORLD_HEIGHT * 2;
-        backgroundMaxScrollingSpeed = (float) (WORLD_HEIGHT) / 4;
-
-        //initialize texture regions
-        playerShipTextureRegion = texturePixels.findRegion("SpriteBarco");
-        enemyShipTextureRegion = texturePixels.findRegion("Lixo01");
-        playerShieldTextureRegion = textureAtlas.findRegion("shield2");
-        enemyShieldTextureRegion = textureAtlas.findRegion("shield1");
-        enemyShieldTextureRegion.flip(false, true);
-
-        playerLaserTextureRegion = textureAtlas.findRegion("laserBlue03");
-        enemyLaserTextureRegion = textureAtlas.findRegion("laserRed03");
-
-        explosionTexture = new Texture("explosion.png");
-
-        //set up game objects
-        playerShip = new PlayerShip(WORLD_WIDTH / 2, WORLD_HEIGHT / 4,
-                10, 10,
-                48, 3,
-                0.4f, 4, 45, 0.5f,
-                playerShipTextureRegion, playerShieldTextureRegion, playerLaserTextureRegion);
-
-        enemyShipList = new LinkedList<>();
-
-        playerLaserList = new LinkedList<>();
-        enemyLaserList = new LinkedList<>();
-
-        explosionList = new LinkedList<>();
-
+        viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
         batch = new SpriteBatch();
+        shapeRenderer = new ShapeRenderer();
+        textureAtlas = new TextureAtlas("arts.atlas");
 
-        prepareHUD();
+        initializeGameObjects();
+        setupHUD();
     }
 
-    private void prepareHUD() {
-        //Create a BitmapFont from our font file
-        FreeTypeFontGenerator fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("EdgeOfTheGalaxyRegular-OVEa6.otf"));
-        FreeTypeFontGenerator.FreeTypeFontParameter fontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+    private void initializeGameObjects() {
+        float boatWidth = WORLD_WIDTH / 8f;
+        float boatHeight = WORLD_HEIGHT / 5f;
+        playerBoat = new Boat(
+            WORLD_WIDTH / 2 - boatWidth / 2,
+            WORLD_HEIGHT / 10,
+            boatWidth, boatHeight,
+            300,
+            textureAtlas.findRegion("SpriteBarco")
+        );
 
-        fontParameter.size = 72;
-        fontParameter.borderWidth = 3.6f;
-        fontParameter.color = new Color(1, 1, 1, 0.3f);
-        fontParameter.borderColor = new Color(0, 0, 0, 0.3f);
+        trashList = new LinkedList<>();
+        obstacleList = new LinkedList<>();
+    }
 
-        font = fontGenerator.generateFont(fontParameter);
-
-        //scale the font to fit world
-        font.getData().setScale(0.08f);
-
-        //calculate hud margins, etc.
-        hudVerticalMargin = font.getCapHeight() / 2;
-        hudLeftX = hudVerticalMargin;
-        hudRightX = WORLD_WIDTH * 2 / 3 - hudLeftX;
-        hudCentreX = WORLD_WIDTH / 3;
-        hudRow1Y = WORLD_HEIGHT - hudVerticalMargin;
-        hudRow2Y = hudRow1Y - hudVerticalMargin - font.getCapHeight();
-        hudSectionWidth = WORLD_WIDTH / 3;
+    private void setupHUD() {
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("EdgeOfTheGalaxyRegular-OVEa6.otf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter params = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        params.size = 72;
+        params.color = Color.WHITE;
+        params.borderWidth = 3;
+        params.borderColor = Color.BLACK;
+        font = generator.generateFont(params);
+        generator.dispose();
     }
 
     @Override
-    public void render(float deltaTime) {
-        batch.begin();
-
-        //scrolling background
-        renderBackground(deltaTime);
-
-        detectInput(deltaTime);
-        playerShip.update(deltaTime);
-
-        spawnEnemyShips(deltaTime);
-
-
-        ListIterator<EnemyShip> enemyShipListIterator = enemyShipList.listIterator();
-        while (enemyShipListIterator.hasNext()) {
-            EnemyShip enemyShip = enemyShipListIterator.next();
-            moveEnemy(enemyShip, deltaTime);
-            enemyShip.update(deltaTime);
-            enemyShip.draw(batch);
-        }
-        //player ship
-        playerShip.draw(batch);
-
-        //lasers
-        renderLasers(deltaTime);
-
-        //detect collisions between lasers and ships
-        detectCollisions();
-
-        //explosions
-        updateAndRenderExplosions(deltaTime);
-
-        //hud rendering
-        updateAndRenderHUD();
-
-        batch.end();
+    public void render(float delta) {
+        update(delta);
+        draw();
     }
 
-    private void updateAndRenderHUD() {
-        //render top row labels
-        font.draw(batch, "Score", hudLeftX, hudRow1Y, hudSectionWidth, Align.left, false);
-        font.draw(batch, "Shield", hudCentreX, hudRow1Y, hudSectionWidth, Align.center, false);
-        font.draw(batch, "Lives", hudRightX, hudRow1Y, hudSectionWidth, Align.right, false);
-        //render second row values
-        font.draw(batch, String.format(Locale.getDefault(), "%06d", score), hudLeftX, hudRow2Y, hudSectionWidth, Align.left, false);
-        font.draw(batch, String.format(Locale.getDefault(), "%02d", playerShip.shield), hudCentreX, hudRow2Y, hudSectionWidth, Align.center, false);
-        font.draw(batch, String.format(Locale.getDefault(), "%02d", playerShip.lives), hudRightX, hudRow2Y, hudSectionWidth, Align.right, false);
-    }
-
-    private void spawnEnemyShips(float deltaTime) {
-        enemySpawnTimer += deltaTime;
-
-        if (enemySpawnTimer > timeBetweenEnemySpawns) {
-            enemyShipList.add(new EnemyShip(SpaceShooterGame.random.nextFloat() * (WORLD_WIDTH - 10) + 5,
-                    WORLD_HEIGHT +10,
-                    10, 10,
-                    20, 1,
-                    0.3f, 5, 50, 0.8f,
-                    enemyShipTextureRegion, enemyShieldTextureRegion, enemyLaserTextureRegion));
-            enemySpawnTimer -= timeBetweenEnemySpawns;
+    private void update(float delta) {
+        if (!gameOver) {
+            gameTime += delta;
+            handleInput();
+            spawnObjects(delta);
+            updateObjects(delta);
+            checkCollisions();
+            checkGameEnd();
         }
     }
 
-    private void detectInput(float deltaTime) {
-        //keyboard input
+    private void handleInput() {
+        float speed = playerBoat.getMovementSpeed() * Gdx.graphics.getDeltaTime();
 
-        //strategy: determine the max distance the ship can move
-        //check each key that matters and move accordingly
-
-        float leftLimit, rightLimit, upLimit, downLimit;
-        leftLimit = -playerShip.boundingBox.x;
-        downLimit = -playerShip.boundingBox.y;
-        rightLimit = WORLD_WIDTH - playerShip.boundingBox.x - playerShip.boundingBox.width;
-        upLimit = (float) WORLD_HEIGHT / 2 - playerShip.boundingBox.y - playerShip.boundingBox.height;
-
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && rightLimit > 0) {
-            playerShip.translate(Math.min(playerShip.movementSpeed * deltaTime, rightLimit), 0f);
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+            playerBoat.updatePosition(
+                Math.max(0, playerBoat.boundingBox.x - speed),
+                playerBoat.boundingBox.y
+            );
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.UP) && upLimit > 0) {
-            playerShip.translate(0f, Math.min(playerShip.movementSpeed * deltaTime, upLimit));
+        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+            playerBoat.updatePosition(
+                Math.min(WORLD_WIDTH - playerBoat.boundingBox.width, playerBoat.boundingBox.x + speed),
+                playerBoat.boundingBox.y
+            );
         }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && leftLimit < 0) {
-            playerShip.translate(Math.max(-playerShip.movementSpeed * deltaTime, leftLimit), 0f);
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN) && downLimit < 0) {
-            playerShip.translate(0f, Math.max(-playerShip.movementSpeed * deltaTime, downLimit));
-        }
-
-        //touch input (also mouse)
         if (Gdx.input.isTouched()) {
-            //get the screen position of the touch
-            float xTouchPixels = Gdx.input.getX();
-            float yTouchPixels = Gdx.input.getY();
+            Vector2 touchPos = new Vector2(Gdx.input.getX(), Gdx.input.getY());
+            viewport.unproject(touchPos);
 
-            //convert to world position
-            Vector2 touchPoint = new Vector2(xTouchPixels, yTouchPixels);
-            touchPoint = viewport.unproject(touchPoint);
+            float targetX = touchPos.x - playerBoat.boundingBox.width / 2;
+            targetX = Math.max(0, Math.min(WORLD_WIDTH - playerBoat.boundingBox.width, targetX));
 
-            //calculate the x and y differences
-            Vector2 playerShipCentre = new Vector2(
-                    playerShip.boundingBox.x + playerShip.boundingBox.width / 2,
-                    playerShip.boundingBox.y + playerShip.boundingBox.height / 2);
+            float currentX = playerBoat.boundingBox.x;
+            float direction = Math.signum(targetX - currentX);
 
-            float touchDistance = touchPoint.dst(playerShipCentre);
+            if (Math.abs(targetX - currentX) > 5f) {
+                playerBoat.updatePosition(
+                    currentX + (speed * direction),
+                    playerBoat.boundingBox.y
+                );
+            }
+        }
 
-            if (touchDistance > TOUCH_MOVEMENT_THRESHOLD) {
-                float xTouchDifference = touchPoint.x - playerShipCentre.x;
-                float yTouchDifference = touchPoint.y - playerShipCentre.y;
+    }
 
-                //scale to the maximum speed of the ship
-                float xMove = xTouchDifference / touchDistance * playerShip.movementSpeed * deltaTime;
-                float yMove = yTouchDifference / touchDistance * playerShip.movementSpeed * deltaTime;
+    private void spawnObjects(float delta) {
+        if (gameTime % 1f < delta) {
+            float size = WORLD_WIDTH / 12f;
+            trashList.add(new Trash(
+                (float)Math.random() * (WORLD_WIDTH - size),
+                WORLD_HEIGHT,
+                size, size,
+                textureAtlas.findRegion(Math.random() > 0.5 ? "Lixo01" : "Lixo02")
+            ));
+        }
 
-                if (xMove > 0) xMove = Math.min(xMove, rightLimit);
-                else xMove = Math.max(xMove, leftLimit);
+        //if (gameTime % 1.5f < delta) {
+        float spawnInterval = Math.max(0.5f, 2f - (gameTime / 30f));
+        if (gameTime % spawnInterval < delta) {
+            float size = WORLD_WIDTH / 9f;
+            String[] types = {"Tronco", "Metal", "RedePesca"};
+            String type = types[(int)(Math.random() * 3)];
+            obstacleList.add(new Obstacle(
+                (float)Math.random() * (WORLD_WIDTH - size),
+                WORLD_HEIGHT,
+                size, size,
+                textureAtlas.findRegion(type),
+                type
+            ));
+        }
+    }
 
-                if (yMove > 0) yMove = Math.min(yMove, upLimit);
-                else yMove = Math.max(yMove, downLimit);
+    private void updateObjects(float delta) {
+        ListIterator<Trash> trashIter = trashList.listIterator();
+        while (trashIter.hasNext()) {
+            Trash trash = trashIter.next();
+            trash.update(delta);
+            if (trash.boundingBox.y + trash.boundingBox.height < 0) {
+                trashIter.remove();
+            }
+        }
 
-                playerShip.translate(xMove, yMove);
+        ListIterator<Obstacle> obstacleIter = obstacleList.listIterator();
+        while (obstacleIter.hasNext()) {
+            Obstacle obstacle = obstacleIter.next();
+            obstacle.update(delta);
+            if (obstacle.boundingBox.y + obstacle.boundingBox.height < 0) {
+                obstacleIter.remove();
             }
         }
     }
 
-    private void moveEnemy(EnemyShip enemyShip, float deltaTime) {
-        //strategy: determine the max distance the ship can move
-
-        float leftLimit, rightLimit, upLimit, downLimit;
-        leftLimit = -enemyShip.boundingBox.x;
-        downLimit = -enemyShip.boundingBox.height;
-        rightLimit = WORLD_WIDTH - enemyShip.boundingBox.x - enemyShip.boundingBox.width;
-        upLimit = WORLD_HEIGHT - enemyShip.boundingBox.y - enemyShip.boundingBox.height;
-
-        float xMove = enemyShip.getDirectionVector().x * enemyShip.movementSpeed * deltaTime;
-        float yMove = enemyShip.getDirectionVector().y * enemyShip.movementSpeed * deltaTime;
-
-        if (xMove > 0) xMove = Math.min(xMove, rightLimit);
-        else xMove = Math.max(xMove, leftLimit);
-
-        if (yMove > 0) yMove = Math.min(yMove, upLimit);
-        else yMove = Math.max(yMove, downLimit);
-
-        enemyShip.translate(xMove, yMove);
-    }
-
-    private void detectCollisions() {
-        //for each player laser, check whether it intersects an enemy ship
-        ListIterator<Laser> laserListIterator = playerLaserList.listIterator();
-        while (laserListIterator.hasNext()) {
-            Laser laser = laserListIterator.next();
-            ListIterator<EnemyShip> enemyShipListIterator = enemyShipList.listIterator();
-            while (enemyShipListIterator.hasNext()) {
-                EnemyShip enemyShip = enemyShipListIterator.next();
-
-                if (enemyShip.intersects(laser.boundingBox)) {
-                    //contact with enemy ship
-                    if (enemyShip.hitAndCheckDestroyed(laser)) {
-                        enemyShipListIterator.remove();
-                        explosionList.add(
-                                new Explosion(explosionTexture,
-                                        new Rectangle(enemyShip.boundingBox),
-                                        0.7f));
-                        score += 100;
-                    }
-                    laserListIterator.remove();
-                    break;
-                }
+    private void checkCollisions() {
+        ListIterator<Trash> trashIter = trashList.listIterator();
+        while (trashIter.hasNext()) {
+            Trash trash = trashIter.next();
+            if (playerBoat.intersects(trash.collisionBox)) {
+                trashIter.remove();
+                collectedTrash++;
             }
         }
-        //for each enemy laser, check whether it intersects the player ship
-        laserListIterator = enemyLaserList.listIterator();
-        while (laserListIterator.hasNext()) {
-            Laser laser = laserListIterator.next();
-            if (playerShip.intersects(laser.boundingBox)) {
-                //contact with player ship
-                if (playerShip.hitAndCheckDestroyed(laser)) {
-                    explosionList.add(
-                            new Explosion(explosionTexture,
-                                    new Rectangle(playerShip.boundingBox),
-                                    1.6f));
-                    playerShip.shield = 10;
-                    playerShip.lives--;
-                }
-                laserListIterator.remove();
+
+        ListIterator<Obstacle> obstacleIter = obstacleList.listIterator();
+        while (obstacleIter.hasNext()) {
+            Obstacle obstacle = obstacleIter.next();
+            if (playerBoat.intersects(obstacle.collisionBox)) {
+                obstacleIter.remove();
+                lives--;
             }
         }
     }
 
-    private void updateAndRenderExplosions(float deltaTime) {
-        ListIterator<Explosion> explosionListIterator = explosionList.listIterator();
-        while (explosionListIterator.hasNext()) {
-            Explosion explosion = explosionListIterator.next();
-            explosion.update(deltaTime);
-            if (explosion.isFinished()) {
-                explosionListIterator.remove();
-            } else {
-                explosion.draw(batch);
-            }
+    private void checkGameEnd() {
+        if (lives <= 0) gameOver = true;
+        if (collectedTrash >= TRASH_TO_WIN) {
+            playerWon = true;
+            gameOver = true;
         }
     }
 
-    private void renderLasers(float deltaTime) {
-        //create new lasers
-        //player lasers
-        if (playerShip.canFireLaser()) {
-            Laser[] lasers = playerShip.fireLasers();
-            playerLaserList.addAll(Arrays.asList(lasers));
+    private void draw() {
+        Gdx.gl.glClearColor(0.1f, 0.1f, 0.2f, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        batch.setProjectionMatrix(camera.combined);
+        batch.begin();
+        for (int i = 0; i < 4; i++) {
+            float offset = (gameTime * (i + 1) * 50) % WORLD_HEIGHT;
+            batch.draw(textureAtlas.findRegion("fase 3"),
+                0, -offset, WORLD_WIDTH, WORLD_HEIGHT * 2);
         }
-        //enemy lasers
-        ListIterator<EnemyShip> enemyShipListIterator = enemyShipList.listIterator();
-        while (enemyShipListIterator.hasNext()) {
-            EnemyShip enemyShip = enemyShipListIterator.next();
-            if (enemyShip.canFireLaser()) {
-                Laser[] lasers = enemyShip.fireLasers();
-                enemyLaserList.addAll(Arrays.asList(lasers));
-            }
+        batch.end();
+
+        batch.begin();
+        for (Trash trash : trashList) trash.draw(batch);
+        for (Obstacle obstacle : obstacleList) obstacle.draw(batch);
+        playerBoat.draw(batch);
+        batch.end();
+
+        batch.begin();
+        font.draw(batch, "Lixo: " + collectedTrash + "/" + TRASH_TO_WIN, 20, WORLD_HEIGHT - 20);
+        font.draw(batch, "Vidas: " + lives, WORLD_WIDTH - 20, WORLD_HEIGHT - 20, 0, Align.right, false);
+        if (gameOver) {
+            String msg = playerWon ? "VITORIA!" : "GAME OVER";
+            font.draw(batch, msg, WORLD_WIDTH/2, WORLD_HEIGHT/2, 0, Align.center, false);
         }
-        //draw lasers
-        //remove old lasers
-        ListIterator<Laser> iterator = playerLaserList.listIterator();
-        while (iterator.hasNext()) {
-            Laser laser = iterator.next();
-            laser.draw(batch);
-            laser.boundingBox.y += laser.movementSpeed * deltaTime;
-            if (laser.boundingBox.y > WORLD_HEIGHT) {
-                iterator.remove();
-            }
-        }
-        iterator = enemyLaserList.listIterator();
-        while (iterator.hasNext()) {
-            Laser laser = iterator.next();
-            laser.draw(batch);
-            laser.boundingBox.y -= laser.movementSpeed * deltaTime;
-            if (laser.boundingBox.y + laser.boundingBox.height < 0) {
-                iterator.remove();
-            }
-        }
+        batch.end();
+
+        if (DEBUG_MODE) drawDebug();
     }
 
-    private void renderBackground(float deltaTime) {
+    private void drawDebug() {
+        shapeRenderer.setProjectionMatrix(camera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(Color.YELLOW);
+        playerBoat.drawBoundingBox(shapeRenderer);
+        shapeRenderer.setColor(Color.GREEN);
+        playerBoat.drawDebug(shapeRenderer);
 
-        //update position of background images
-        backgroundOffsets[0] += deltaTime * backgroundMaxScrollingSpeed / 8;
-        backgroundOffsets[1] += deltaTime * backgroundMaxScrollingSpeed / 4;
-        backgroundOffsets[2] += deltaTime * backgroundMaxScrollingSpeed / 2;
-        backgroundOffsets[3] += deltaTime * backgroundMaxScrollingSpeed;
-
-        //draw each background layer
-        for (int layer = 0; layer < backgroundOffsets.length; layer++) {
-            if (backgroundOffsets[layer] > WORLD_HEIGHT) {
-                backgroundOffsets[layer] = 0;
-            }
-            batch.draw(backgrounds[layer], 0, -backgroundOffsets[layer],
-                    WORLD_WIDTH, backgroundHeight);
+        for (Trash trash : trashList) {
+            shapeRenderer.setColor(Color.YELLOW);
+            trash.drawBoundingBox(shapeRenderer);
+            shapeRenderer.setColor(Color.BLUE);
+            trash.drawDebug(shapeRenderer);
         }
+
+        for (Obstacle obstacle : obstacleList) {
+            shapeRenderer.setColor(Color.YELLOW);
+            obstacle.drawBoundingBox(shapeRenderer);
+            shapeRenderer.setColor(Color.RED);
+            obstacle.drawDebug(shapeRenderer);
+        }
+        shapeRenderer.end();
     }
 
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, true);
-        batch.setProjectionMatrix(camera.combined);
-    }
-
-    @Override
-    public void pause() {
-
-    }
-
-    @Override
-    public void resume() {
-
-    }
-
-    @Override
-    public void hide() {
-
-    }
-
-    @Override
-    public void show() {
-
+        camera.position.set(WORLD_WIDTH/2, WORLD_HEIGHT/2, 0);
+        camera.update();
+        float scale = Math.min(
+            viewport.getWorldWidth() / WORLD_WIDTH,
+            viewport.getWorldHeight() / WORLD_HEIGHT
+        );
+        font.getData().setScale(scale);
     }
 
     @Override
     public void dispose() {
         batch.dispose();
+        shapeRenderer.dispose();
+        textureAtlas.dispose();
+        font.dispose();
+    }
+
+    @Override public void pause() {
+    }
+    @Override public void resume() {
+    }
+    @Override public void hide() {
+    }
+    @Override public void show() {
     }
 }
