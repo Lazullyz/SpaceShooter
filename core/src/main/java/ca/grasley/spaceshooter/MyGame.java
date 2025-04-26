@@ -3,28 +3,26 @@ package ca.grasley.spaceshooter;
 import com.badlogic.gdx.Game;
 import java.util.Random;
 
-public class SpaceShooterGame extends Game {
-    GameScreen gameScreen;
+public class MyGame extends Game {
     public static Random random = new Random();
 
     @Override
     public void create() {
-        gameScreen = new GameScreen();
-        setScreen(gameScreen);
+        setScreen(new MenuScreen(this));  // Chama o MenuScreen na inicialização
     }
 
     @Override
     public void dispose() {
-        gameScreen.dispose();
+        super.dispose();  // O Game já cuida do dispose da tela atual
     }
 
     @Override
     public void render() {
-        super.render();
+        super.render();  // O Game já cuida do render da tela atual
     }
 
     @Override
     public void resize(int width, int height) {
-        gameScreen.resize(width, height);
+        super.resize(width, height);  // O Game já cuida do resize da tela atual
     }
 }

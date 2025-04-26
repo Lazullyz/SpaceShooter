@@ -100,16 +100,22 @@ public class GameScreen implements Screen {
     }
 
     private void update(float delta) {
-        if (!gameOver) {
-            gameTime += delta;
-            tempoRestante -= delta;
-
-            handleInput();
-            spawnObjects(delta);
-            updateObjects(delta);
-            checkCollisions();
-            checkGameEnd();
+        if (gameOver) {
+            if (Gdx.input.justTouched()) {
+                resetGame();
+            }
+            return; // Sai do update para não atualizar mais nada
         }
+
+        // Jogo rolando normalmente:
+        gameTime += delta;
+        tempoRestante -= delta;
+
+        handleInput();
+        spawnObjects(delta);
+        updateObjects(delta);
+        checkCollisions();
+        checkGameEnd();
     }
 
     private void handleInput() {
@@ -221,19 +227,39 @@ public class GameScreen implements Screen {
         if (tempoRestante <= 0) {
             gameOver = true;
             musicaDeFundo.stop();
+            gameOverSound.play();
         }
         if (lives <= 0){
             gameOver = true;
             musicaDeFundo.stop();
+            gameOverSound.play();
         }
         if (collectedTrash >= TRASH_TO_WIN) {
             playerWon = true;
             gameOver = true;
+            playerWonSound.play();
         }
         if (playerWon) {
             musicaDeFundo.stop();
         }
     }
+
+    private void resetGame() {
+        gameOver = false;
+        playerWon = false;
+        lives = 3;
+        collectedTrash = 0;
+        gameTime = 0;
+        tempoRestante = TEMPO_LIMITE;
+
+        trashList.clear();
+        obstacleList.clear();
+
+        playerBoat.updatePosition(WORLD_WIDTH / 2 - playerBoat.boundingBox.width / 2, WORLD_HEIGHT / 10);
+
+        musicaDeFundo.play();
+    }
+
 
     private void draw() {
         Gdx.gl.glClearColor(0.1f, 0.1f, 0.2f, 1);
@@ -260,9 +286,13 @@ public class GameScreen implements Screen {
         font.draw(batch, "Lixo: " + collectedTrash + "/" + TRASH_TO_WIN, 20, WORLD_HEIGHT - 20);
         font.draw(batch, "Vidas: " + lives, WORLD_WIDTH - 20, WORLD_HEIGHT - 20, 0, Align.right, false);
         if (gameOver) {
-            String msg = playerWon ? "VITORIA!" : "GAME OVER";
-            font.draw(batch, msg, WORLD_WIDTH/2, WORLD_HEIGHT/2, 0, Align.center, false);
+            String Mainmsg = playerWon ? "VITORIA!" : "GAME OVER";
+            font.draw(batch, Mainmsg, WORLD_WIDTH/2, WORLD_HEIGHT/2 + 90, 0, Align.center, false);
+        if (gameOver) {
+            String restartmsg = "click to restart";
+            font.draw(batch, restartmsg, WORLD_WIDTH/2, WORLD_HEIGHT/2 -50, 0, Align.center, false);
         }
+           }
         batch.end();
 
         if (DEBUG_MODE) drawDebug();
@@ -326,7 +356,7 @@ public class GameScreen implements Screen {
             coletaLixoSound= Gdx.audio.newSound(Gdx.files.internal("som.coleta.wav"));
             danoSound = Gdx.audio.newSound(Gdx.files.internal("som.dano.wav"));
             gameOverSound = Gdx.audio.newSound(Gdx.files.internal("som.gameover.wav"));
-            playerWonSound = Gdx.audio.newSound(Gdx.files.internal("som.coleta.wav"));
+            playerWonSound = Gdx.audio.newSound(Gdx.files.internal("som.vitoria.mp3"));
         }
 
     }
