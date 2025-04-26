@@ -15,7 +15,7 @@ public class Boat {
 
     public Boat(float x, float y, float width, float height,
                 float movementSpeed, TextureRegion texture) {
-        this.movementSpeed = movementSpeed;
+        this.movementSpeed = 700f;
         this.texture = texture;
         this.boundingBox = new Rectangle(x, y, width, height);
 

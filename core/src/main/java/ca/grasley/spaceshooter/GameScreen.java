@@ -3,6 +3,8 @@ package ca.grasley.spaceshooter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -19,6 +21,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import java.util.LinkedList;
 import java.util.ListIterator;
+
 
 public class GameScreen implements Screen {
     private final float WORLD_WIDTH = 1280;
@@ -41,8 +44,17 @@ public class GameScreen implements Screen {
     private float gameTime = 0;
     private boolean gameOver = false;
     private boolean playerWon = false;
-
     private BitmapFont font;
+    private Music musicaDeFundo;
+    private Sound coletaLixoSound;
+    private Sound danoSound;
+    private Sound gameOverSound;
+    private Sound playerWonSound;
+
+    private final float TEMPO_LIMITE = 60f;  // Tempo máximo para coletar os lixos
+    private float tempoRestante = TEMPO_LIMITE;
+
+
 
     public GameScreen() {
         camera = new OrthographicCamera();
@@ -90,6 +102,8 @@ public class GameScreen implements Screen {
     private void update(float delta) {
         if (!gameOver) {
             gameTime += delta;
+            tempoRestante -= delta;
+
             handleInput();
             spawnObjects(delta);
             updateObjects(delta);
@@ -188,6 +202,7 @@ public class GameScreen implements Screen {
             if (playerBoat.intersects(trash.collisionBox)) {
                 trashIter.remove();
                 collectedTrash++;
+                coletaLixoSound.play();
             }
         }
 
@@ -197,15 +212,26 @@ public class GameScreen implements Screen {
             if (playerBoat.intersects(obstacle.collisionBox)) {
                 obstacleIter.remove();
                 lives--;
+                danoSound.play();
             }
         }
     }
 
     private void checkGameEnd() {
-        if (lives <= 0) gameOver = true;
+        if (tempoRestante <= 0) {
+            gameOver = true;
+            musicaDeFundo.stop();
+        }
+        if (lives <= 0){
+            gameOver = true;
+            musicaDeFundo.stop();
+        }
         if (collectedTrash >= TRASH_TO_WIN) {
             playerWon = true;
             gameOver = true;
+        }
+        if (playerWon) {
+            musicaDeFundo.stop();
         }
     }
 
@@ -229,6 +255,8 @@ public class GameScreen implements Screen {
         batch.end();
 
         batch.begin();
+        font.draw(batch, "TEMPO:" + (int)tempoRestante, WORLD_WIDTH / 2, WORLD_HEIGHT - 20, 0, Align.center, false);
+
         font.draw(batch, "Lixo: " + collectedTrash + "/" + TRASH_TO_WIN, 20, WORLD_HEIGHT - 20);
         font.draw(batch, "Vidas: " + lives, WORLD_WIDTH - 20, WORLD_HEIGHT - 20, 0, Align.right, false);
         if (gameOver) {
@@ -291,5 +319,14 @@ public class GameScreen implements Screen {
     @Override public void hide() {
     }
     @Override public void show() {
+            musicaDeFundo = Gdx.audio.newMusic(Gdx.files.internal("Wiz Khalifa - Black and Yellow (Instrumental).mp3"));
+            musicaDeFundo.setVolume(0.2f);
+            musicaDeFundo.setLooping(true);
+            musicaDeFundo.play();
+            coletaLixoSound= Gdx.audio.newSound(Gdx.files.internal("som.coleta.wav"));
+            danoSound = Gdx.audio.newSound(Gdx.files.internal("som.dano.wav"));
+            gameOverSound = Gdx.audio.newSound(Gdx.files.internal("som.gameover.wav"));
+            playerWonSound = Gdx.audio.newSound(Gdx.files.internal("som.coleta.wav"));
+        }
+
     }
-}
