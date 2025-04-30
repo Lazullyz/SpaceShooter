@@ -15,7 +15,6 @@ public class Trash {
         this.texture = texture;
         this.boundingBox = new Rectangle(x, y, width, height);
 
-        // Hitbox Lixo
         float size = Math.min(width, height) * 0.5f;
         float offsetX = (width - size) / 2;
         float offsetY = (height - size) / 2;

@@ -15,11 +15,10 @@ public class Boat {
 
     public Boat(float x, float y, float width, float height,
                 float movementSpeed, TextureRegion texture) {
-        this.movementSpeed = 700f;
+        this.movementSpeed = movementSpeed;
         this.texture = texture;
         this.boundingBox = new Rectangle(x, y, width, height);
 
-        // Hitbox do barco
         float collisionWidth = width * 0.55f;
         float collisionHeight = height * 0.9f;
         this.collisionOffsetX = (width - collisionWidth) / 2;

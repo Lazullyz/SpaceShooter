@@ -22,13 +22,15 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
-
 public class GameScreen implements Screen {
     private final float WORLD_WIDTH = 1280;
     private final float WORLD_HEIGHT = 720;
-    private final int TRASH_TO_WIN = 30;
+    private int TRASH_TO_WIN;
+    private float TIME_LIMIT;
     private final boolean DEBUG_MODE = false;
 
+    private MyGame game;
+    private int currentLevel;
     private OrthographicCamera camera;
     private Viewport viewport;
     private SpriteBatch batch;
@@ -45,18 +47,32 @@ public class GameScreen implements Screen {
     private boolean gameOver = false;
     private boolean playerWon = false;
     private BitmapFont font;
-    private Music musicaDeFundo;
-    private Sound coletaLixoSound;
-    private Sound danoSound;
-    private Sound gameOverSound;
-    private Sound playerWonSound;
+    private Music backgroundMusic;
+    private Sound collectSound, damageSound, gameOverSound, victorySound;
 
-    private final float TEMPO_LIMITE = 60f;  // Tempo máximo para coletar os lixos
-    private float tempoRestante = TEMPO_LIMITE;
+    private float remainingTime;
 
+    public GameScreen(MyGame game, int level) {
+        this.game = game;
+        this.currentLevel = level;
 
+        // Configurações por fase
+        switch(level) {
+            case 1:
+                TRASH_TO_WIN = 5;
+                TIME_LIMIT = 60f;
+                break;
+            case 2:
+                TRASH_TO_WIN = 10;
+                TIME_LIMIT = 45f;
+                break;
+            case 3:
+                TRASH_TO_WIN = 15;
+                TIME_LIMIT = 30f;
+                break;
+        }
 
-    public GameScreen() {
+        remainingTime = TIME_LIMIT;
         camera = new OrthographicCamera();
         viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
         batch = new SpriteBatch();
@@ -102,14 +118,13 @@ public class GameScreen implements Screen {
     private void update(float delta) {
         if (gameOver) {
             if (Gdx.input.justTouched()) {
-                resetGame();
+                game.setScreen(new LevelSelectScreen(game));
             }
-            return; // Sai do update para não atualizar mais nada
+            return;
         }
 
-        // Jogo rolando normalmente:
         gameTime += delta;
-        tempoRestante -= delta;
+        remainingTime -= delta;
 
         handleInput();
         spawnObjects(delta);
@@ -151,11 +166,13 @@ public class GameScreen implements Screen {
                 );
             }
         }
-
     }
 
     private void spawnObjects(float delta) {
-        if (gameTime % 1f < delta) {
+        float trashSpawnRate = 1f - (currentLevel * 0.1f);
+        float obstacleSpawnRate = Math.max(0.5f, 2f - (gameTime / (30f - (currentLevel * 5f))));
+
+        if (gameTime % trashSpawnRate < delta) {
             float size = WORLD_WIDTH / 12f;
             trashList.add(new Trash(
                 (float)Math.random() * (WORLD_WIDTH - size),
@@ -165,19 +182,37 @@ public class GameScreen implements Screen {
             ));
         }
 
-        //if (gameTime % 1.5f < delta) {
-        float spawnInterval = Math.max(0.5f, 2f - (gameTime / 30f));
-        if (gameTime % spawnInterval < delta) {
+        if (gameTime % obstacleSpawnRate < delta) {
             float size = WORLD_WIDTH / 9f;
-            String[] types = {"Tronco", "Metal", "RedePesca"};
-            String type = types[(int)(Math.random() * 3)];
-            obstacleList.add(new Obstacle(
+            String type;
+
+            switch(currentLevel) {
+                case 1:
+                    type = "Tronco";
+                    break;
+                case 2:
+                    type = "Metal";
+                    break;
+                case 3:
+                    String[] types = {"Tronco", "Metal", "RedePesca"};
+                    type = types[(int)(Math.random() * types.length)];
+                    break;
+                default:
+                    type = "Tronco";
+            }
+
+            Obstacle obstacle = new Obstacle(
                 (float)Math.random() * (WORLD_WIDTH - size),
                 WORLD_HEIGHT,
                 size, size,
                 textureAtlas.findRegion(type),
                 type
-            ));
+            );
+
+            // Velocidade por fase: 250, 350, 450
+            obstacle.setSpeed(250 + (currentLevel-1)*100);
+
+            obstacleList.add(obstacle);
         }
     }
 
@@ -208,7 +243,7 @@ public class GameScreen implements Screen {
             if (playerBoat.intersects(trash.collisionBox)) {
                 trashIter.remove();
                 collectedTrash++;
-                coletaLixoSound.play();
+                collectSound.play();
             }
         }
 
@@ -218,48 +253,24 @@ public class GameScreen implements Screen {
             if (playerBoat.intersects(obstacle.collisionBox)) {
                 obstacleIter.remove();
                 lives--;
-                danoSound.play();
+                damageSound.play();
             }
         }
     }
 
     private void checkGameEnd() {
-        if (tempoRestante <= 0) {
+        if (remainingTime <= 0 || lives <= 0) {
             gameOver = true;
-            musicaDeFundo.stop();
-            gameOverSound.play();
-        }
-        if (lives <= 0){
-            gameOver = true;
-            musicaDeFundo.stop();
+            backgroundMusic.stop();
             gameOverSound.play();
         }
         if (collectedTrash >= TRASH_TO_WIN) {
             playerWon = true;
             gameOver = true;
-            playerWonSound.play();
-        }
-        if (playerWon) {
-            musicaDeFundo.stop();
+            victorySound.play();
+            game.unlockNextLevel(currentLevel);
         }
     }
-
-    private void resetGame() {
-        gameOver = false;
-        playerWon = false;
-        lives = 3;
-        collectedTrash = 0;
-        gameTime = 0;
-        tempoRestante = TEMPO_LIMITE;
-
-        trashList.clear();
-        obstacleList.clear();
-
-        playerBoat.updatePosition(WORLD_WIDTH / 2 - playerBoat.boundingBox.width / 2, WORLD_HEIGHT / 10);
-
-        musicaDeFundo.play();
-    }
-
 
     private void draw() {
         Gdx.gl.glClearColor(0.1f, 0.1f, 0.2f, 1);
@@ -269,7 +280,7 @@ public class GameScreen implements Screen {
         batch.begin();
         for (int i = 0; i < 4; i++) {
             float offset = (gameTime * (i + 1) * 50) % WORLD_HEIGHT;
-            batch.draw(textureAtlas.findRegion("fase 3"),
+            batch.draw(textureAtlas.findRegion("fase " + currentLevel),
                 0, -offset, WORLD_WIDTH, WORLD_HEIGHT * 2);
         }
         batch.end();
@@ -281,18 +292,15 @@ public class GameScreen implements Screen {
         batch.end();
 
         batch.begin();
-        font.draw(batch, "TEMPO:" + (int)tempoRestante, WORLD_WIDTH / 2, WORLD_HEIGHT - 20, 0, Align.center, false);
-
+        font.draw(batch, "TEMPO: " + (int)remainingTime, WORLD_WIDTH / 2, WORLD_HEIGHT - 20, 0, Align.center, false);
         font.draw(batch, "Lixo: " + collectedTrash + "/" + TRASH_TO_WIN, 20, WORLD_HEIGHT - 20);
         font.draw(batch, "Vidas: " + lives, WORLD_WIDTH - 20, WORLD_HEIGHT - 20, 0, Align.right, false);
+
         if (gameOver) {
-            String Mainmsg = playerWon ? "VITORIA!" : "GAME OVER";
-            font.draw(batch, Mainmsg, WORLD_WIDTH/2, WORLD_HEIGHT/2 + 90, 0, Align.center, false);
-        if (gameOver) {
-            String restartmsg = "click to restart";
-            font.draw(batch, restartmsg, WORLD_WIDTH/2, WORLD_HEIGHT/2 -50, 0, Align.center, false);
+            String mainMsg = playerWon ? "VITORIA!" : "GAME OVER";
+            font.draw(batch, mainMsg, WORLD_WIDTH/2, WORLD_HEIGHT/2 + 90, 0, Align.center, false);
+            font.draw(batch, "Toque para voltar", WORLD_WIDTH/2, WORLD_HEIGHT/2 -50, 0, Align.center, false);
         }
-           }
         batch.end();
 
         if (DEBUG_MODE) drawDebug();
@@ -340,23 +348,27 @@ public class GameScreen implements Screen {
         shapeRenderer.dispose();
         textureAtlas.dispose();
         font.dispose();
+        backgroundMusic.dispose();
+        collectSound.dispose();
+        damageSound.dispose();
+        gameOverSound.dispose();
+        victorySound.dispose();
     }
 
-    @Override public void pause() {
-    }
-    @Override public void resume() {
-    }
-    @Override public void hide() {
-    }
-    @Override public void show() {
-            musicaDeFundo = Gdx.audio.newMusic(Gdx.files.internal("Wiz Khalifa - Black and Yellow (Instrumental).mp3"));
-            musicaDeFundo.setVolume(0.2f);
-            musicaDeFundo.setLooping(true);
-            musicaDeFundo.play();
-            coletaLixoSound= Gdx.audio.newSound(Gdx.files.internal("som.coleta.wav"));
-            danoSound = Gdx.audio.newSound(Gdx.files.internal("som.dano.wav"));
-            gameOverSound = Gdx.audio.newSound(Gdx.files.internal("som.gameover.wav"));
-            playerWonSound = Gdx.audio.newSound(Gdx.files.internal("som.vitoria.mp3"));
-        }
+    @Override
+    public void show() {
+        backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("Wiz Khalifa - Black and Yellow (Instrumental).mp3"));
+        backgroundMusic.setVolume(0.2f);
+        backgroundMusic.setLooping(true);
+        backgroundMusic.play();
 
+        collectSound = Gdx.audio.newSound(Gdx.files.internal("som.coleta.wav"));
+        damageSound = Gdx.audio.newSound(Gdx.files.internal("som.dano.wav"));
+        gameOverSound = Gdx.audio.newSound(Gdx.files.internal("som.gameover.wav"));
+        victorySound = Gdx.audio.newSound(Gdx.files.internal("som.vitoria.mp3"));
     }
+
+    @Override public void pause() {}
+    @Override public void resume() {}
+    @Override public void hide() {}
+}
