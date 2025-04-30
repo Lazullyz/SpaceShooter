@@ -269,6 +269,7 @@ public class GameScreen implements Screen {
             gameOver = true;
             victorySound.play();
             game.unlockNextLevel(currentLevel);
+            backgroundMusic.stop();
         }
     }
 
