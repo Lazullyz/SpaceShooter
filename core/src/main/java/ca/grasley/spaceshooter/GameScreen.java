@@ -59,16 +59,16 @@ public class GameScreen implements Screen {
         // Configurações por fase
         switch(level) {
             case 1:
-                TRASH_TO_WIN = 5;
-                TIME_LIMIT = 60f;
+                TRASH_TO_WIN = 10;
+                TIME_LIMIT = 40f;
                 break;
             case 2:
-                TRASH_TO_WIN = 10;
-                TIME_LIMIT = 45f;
+                TRASH_TO_WIN = 20;
+                TIME_LIMIT = 50f;
                 break;
             case 3:
-                TRASH_TO_WIN = 15;
-                TIME_LIMIT = 30f;
+                TRASH_TO_WIN = 30;
+                TIME_LIMIT = 50f;
                 break;
         }
 
@@ -90,7 +90,7 @@ public class GameScreen implements Screen {
             WORLD_WIDTH / 2 - boatWidth / 2,
             WORLD_HEIGHT / 10,
             boatWidth, boatHeight,
-            300,
+            500,
             textureAtlas.findRegion("SpriteBarco")
         );
 
