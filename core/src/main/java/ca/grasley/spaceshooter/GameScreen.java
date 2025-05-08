@@ -292,15 +292,28 @@ public class GameScreen implements Screen {
         batch.end();
 
         batch.begin();
-        font.draw(batch, "TEMPO: " + (int)remainingTime, WORLD_WIDTH / 2, WORLD_HEIGHT - 20, 0, Align.center, false);
-        font.draw(batch, "Lixo: " + collectedTrash + "/" + TRASH_TO_WIN, 20, WORLD_HEIGHT - 20);
-        font.draw(batch, "Vidas: " + lives, WORLD_WIDTH - 20, WORLD_HEIGHT - 20, 0, Align.right, false);
+        
+        font.draw(batch, "Tempo: " + (int)remainingTime,
+            WORLD_WIDTH / 2, WORLD_HEIGHT - 30,
+            0, Align.center, false);
+
+        font.draw(batch, "Vidas: " + lives,
+            30, WORLD_HEIGHT - 30);
+
+        font.draw(batch, "Lixo: " + collectedTrash + "/" + TRASH_TO_WIN,
+            30, WORLD_HEIGHT - 100);  // 40px abaixo das vidas
 
         if (gameOver) {
             String mainMsg = playerWon ? "VITORIA!" : "GAME OVER";
-            font.draw(batch, mainMsg, WORLD_WIDTH/2, WORLD_HEIGHT/2 + 90, 0, Align.center, false);
-            font.draw(batch, "Toque para voltar", WORLD_WIDTH/2, WORLD_HEIGHT/2 -50, 0, Align.center, false);
+            font.draw(batch, mainMsg,
+                WORLD_WIDTH/2, WORLD_HEIGHT/2 + 90,
+                0, Align.center, false);
+
+            font.draw(batch, "Toque para voltar",
+                WORLD_WIDTH/2, WORLD_HEIGHT/2 - 50,
+                0, Align.center, false);
         }
+
         batch.end();
 
         if (DEBUG_MODE) drawDebug();
