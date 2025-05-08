@@ -8,16 +8,18 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 
 public class MenuScreen implements Screen {
     private MyGame game;
     private SpriteBatch batch;
     private BitmapFont titleFont, menuFont;
+    private GlyphLayout titleLayout, menuLayout;
 
     public MenuScreen(MyGame game) {
         this.game = game;
         batch = new SpriteBatch();
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("EdgeOfTheGalaxyRegular-OVEa6.otf"));
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("VeniceClassic.ttf"));
 
         FreeTypeFontGenerator.FreeTypeFontParameter titleParams = new FreeTypeFontGenerator.FreeTypeFontParameter();
         titleParams.size = 100;
@@ -28,6 +30,12 @@ public class MenuScreen implements Screen {
         menuFont = generator.generateFont(menuParams);
 
         generator.dispose();
+
+        titleLayout = new GlyphLayout();
+        menuLayout = new GlyphLayout();
+
+        titleLayout.setText(titleFont, "Water Guardians");
+        menuLayout.setText(menuFont, "Pressione para Jogar");
     }
 
     @Override
@@ -36,13 +44,26 @@ public class MenuScreen implements Screen {
         Gdx.gl.glClearColor(0.1f, 0.1f, 0.2f, 1);
 
         batch.begin();
-        titleFont.draw(batch, "Water Guardians", Gdx.graphics.getWidth()/2 - 300, Gdx.graphics.getHeight()/2 + 100);
-        menuFont.draw(batch, "Pressione para Jogar", Gdx.graphics.getWidth()/2 - 200, Gdx.graphics.getHeight()/2 - 50);
+
+        float titleX = Gdx.graphics.getWidth() / 2f - titleLayout.width / 2;
+        float titleY = Gdx.graphics.getHeight() / 2f + 100;
+        titleFont.draw(batch, titleLayout, titleX, titleY);
+
+        float menuX = Gdx.graphics.getWidth() / 2f - menuLayout.width / 2;
+        float menuY = Gdx.graphics.getHeight() / 2f - 50;
+        menuFont.draw(batch, menuLayout, menuX, menuY);
+
         batch.end();
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.justTouched()) {
             game.setScreen(new LevelSelectScreen(game));
         }
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        titleLayout.setText(titleFont, "Water Guardians");
+        menuLayout.setText(menuFont, "Pressione para Jogar");
     }
 
     @Override
@@ -53,7 +74,6 @@ public class MenuScreen implements Screen {
     }
 
     @Override public void show() {}
-    @Override public void resize(int width, int height) {}
     @Override public void pause() {}
     @Override public void resume() {}
     @Override public void hide() {}

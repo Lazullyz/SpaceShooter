@@ -56,7 +56,6 @@ public class GameScreen implements Screen {
         this.game = game;
         this.currentLevel = level;
 
-        // Configurações por fase
         switch(level) {
             case 1:
                 TRASH_TO_WIN = 10;
@@ -99,7 +98,7 @@ public class GameScreen implements Screen {
     }
 
     private void setupHUD() {
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("EdgeOfTheGalaxyRegular-OVEa6.otf"));
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("VeniceClassic.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter params = new FreeTypeFontGenerator.FreeTypeFontParameter();
         params.size = 72;
         params.color = Color.WHITE;
