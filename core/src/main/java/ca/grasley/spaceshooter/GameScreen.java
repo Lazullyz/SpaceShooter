@@ -50,7 +50,8 @@ public class GameScreen implements Screen {
     private boolean playerWon = false;
     private BitmapFont font;
     private Music backgroundMusic;
-    private Sound collectSound, damageSound, gameOverSound, victorySound;
+    private Sound collectSound, damageSound;
+    private Music victorySound,gameOverSound;
 
     private float remainingTime;
     private float gameOverTimer = 0;
@@ -287,8 +288,9 @@ public class GameScreen implements Screen {
             gameOverTimer = 0;
 
             if (currentLevel == 3) {
-                game.setScreen(new CutsceneScreen(game));
                 victorySound.stop();
+                game.setScreen(new CutsceneScreen(game));
+
             }
         }
     }
@@ -391,10 +393,12 @@ public class GameScreen implements Screen {
         backgroundMusic.setLooping(true);
         backgroundMusic.play();
 
-        collectSound = Gdx.audio.newSound(Gdx.files.internal("som.coleta.wav"));
-        damageSound = Gdx.audio.newSound(Gdx.files.internal("som.dano.wav"));
-        gameOverSound = Gdx.audio.newSound(Gdx.files.internal("som.gameover.wav"));
-        victorySound = Gdx.audio.newSound(Gdx.files.internal("som.vitoria.mp3"));
+        collectSound = Gdx.audio.newSound(Gdx.files.internal("som_coleta.ogg"));
+        damageSound = Gdx.audio.newSound(Gdx.files.internal("som_dano.wav"));
+        gameOverSound = Gdx.audio.newMusic(Gdx.files.internal("som_gameover.wav"));
+        gameOverSound.setVolume(0.7f);
+        victorySound = Gdx.audio.newMusic(Gdx.files.internal("som_vitoria.wav"));
+        victorySound.setVolume(0.7f);
     }
 
     @Override public void pause() {}
