@@ -11,7 +11,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
@@ -20,7 +19,6 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-import java.awt.geom.Arc2D;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
@@ -55,13 +53,13 @@ public class GameScreen implements Screen {
     private Sound collectSound, damageSound, gameOverSound, victorySound;
 
     private float remainingTime;
+    private float gameOverTimer = 0;
 
     public GameScreen(MyGame game, int level) {
         this.game = game;
         this.currentLevel = level;
 
-        // Configurações por fase
-        switch(level) {
+        switch (level) {
             case 1:
                 TRASH_TO_WIN = 15;
                 TIME_LIMIT = 30f;
@@ -76,7 +74,7 @@ public class GameScreen implements Screen {
                 break;
             case 3:
                 TRASH_TO_WIN = 35;
-                TIME_LIMIT = 40f;
+                TIME_LIMIT = 50f;
                 LEFT_LIMIT = 0;
                 RIGHT_LIMIT = WORLD_WIDTH;
                 break;
@@ -88,7 +86,6 @@ public class GameScreen implements Screen {
         batch = new SpriteBatch();
         shapeRenderer = new ShapeRenderer();
         textureAtlas = new TextureAtlas("arts.atlas");
-
 
         initializeGameObjects();
         setupHUD();
@@ -127,7 +124,8 @@ public class GameScreen implements Screen {
 
     private void update(float delta) {
         if (gameOver) {
-            if (Gdx.input.justTouched()) {
+            gameOverTimer += delta;
+            if (gameOverTimer >= 2f && Gdx.input.justTouched()) {
                 game.setScreen(new LevelSelectScreen(game));
             }
             return;
@@ -164,8 +162,7 @@ public class GameScreen implements Screen {
             viewport.unproject(touchPos);
 
             float targetX = touchPos.x - playerBoat.boundingBox.width / 2;
-            targetX = targetX = Math.max(LEFT_LIMIT, Math.min(RIGHT_LIMIT - playerBoat.boundingBox.width, targetX));
-
+            targetX = Math.max(LEFT_LIMIT, Math.min(RIGHT_LIMIT - playerBoat.boundingBox.width, targetX));
 
             float currentX = playerBoat.boundingBox.x;
             float direction = Math.signum(targetX - currentX);
@@ -185,19 +182,10 @@ public class GameScreen implements Screen {
         float obstacleX = 0;
         float trashX = 0;
 
-        if (gameTime % obstacleSpawnRate < delta) {
-            float size = WORLD_WIDTH / 9f;
-            if (currentLevel == 1 || currentLevel == 2) {
-                obstacleX = LEFT_LIMIT + (float) Math.random() * (RIGHT_LIMIT - LEFT_LIMIT - size);
-            } else {
-                obstacleX = (float) Math.random() * (WORLD_WIDTH - size);
-            }
-        }
-
         if (gameTime % trashSpawnRate < delta) {
             float size = WORLD_WIDTH / 12f;
             trashList.add(new Trash(
-                trashX = LEFT_LIMIT + (float)Math.random() * (RIGHT_LIMIT -LEFT_LIMIT - size),
+                trashX = LEFT_LIMIT + (float) Math.random() * (RIGHT_LIMIT - LEFT_LIMIT - size),
                 WORLD_HEIGHT,
                 size, size,
                 textureAtlas.findRegion(Math.random() > 0.5 ? "Lixo01" : "Lixo02")
@@ -206,9 +194,14 @@ public class GameScreen implements Screen {
 
         if (gameTime % obstacleSpawnRate < delta) {
             float size = WORLD_WIDTH / 9f;
-            String type;
+            if (currentLevel == 1 || currentLevel == 2) {
+                obstacleX = LEFT_LIMIT + (float) Math.random() * (RIGHT_LIMIT - LEFT_LIMIT - size);
+            } else {
+                obstacleX = (float) Math.random() * (WORLD_WIDTH - size);
+            }
 
-            switch(currentLevel) {
+            String type;
+            switch (currentLevel) {
                 case 1:
                     type = "Tronco";
                     break;
@@ -217,7 +210,7 @@ public class GameScreen implements Screen {
                     break;
                 case 3:
                     String[] types = {"Tronco", "Metal", "RedePesca"};
-                    type = types[(int)(Math.random() * types.length)];
+                    type = types[(int) (Math.random() * types.length)];
                     break;
                 default:
                     type = "Tronco";
@@ -230,9 +223,7 @@ public class GameScreen implements Screen {
                 textureAtlas.findRegion(type),
                 type
             );
-
-            // Velocidade por fase: 250, 350, 450
-            obstacle.setSpeed(250 + (currentLevel-1)*100);
+            obstacle.setSpeed(250 + (currentLevel - 1) * 100);
 
             obstacleList.add(obstacle);
         }
@@ -285,19 +276,19 @@ public class GameScreen implements Screen {
             gameOver = true;
             backgroundMusic.stop();
             gameOverSound.play();
+            gameOverTimer = 0;
         }
         if (collectedTrash >= TRASH_TO_WIN) {
-            {
-                playerWon = true;
-                gameOver = true;
-                victorySound.play();
-                game.unlockNextLevel(currentLevel);
-                backgroundMusic.stop();
-            }
+            playerWon = true;
+            gameOver = true;
+            victorySound.play();
+            game.unlockNextLevel(currentLevel);
+            backgroundMusic.stop();
+            gameOverTimer = 0;
+
             if (currentLevel == 3) {
                 game.setScreen(new CutsceneScreen(game));
                 victorySound.stop();
-
             }
         }
     }
@@ -322,21 +313,23 @@ public class GameScreen implements Screen {
         batch.end();
 
         batch.begin();
-        font.draw(batch, "TEMPO: " + (int)remainingTime, WORLD_WIDTH / 2, WORLD_HEIGHT - 20, 0, Align.center, false);
+        font.draw(batch, "TEMPO: " + (int) remainingTime, WORLD_WIDTH / 2, WORLD_HEIGHT - 20, 0, Align.center, false);
         font.draw(batch, "Lixo: " + collectedTrash + "/" + TRASH_TO_WIN, 20, WORLD_HEIGHT - 20);
         font.draw(batch, "Vidas: " + lives, WORLD_WIDTH - 20, WORLD_HEIGHT - 20, 0, Align.right, false);
 
         if (gameOver) {
-        if (!playerWon) {
-            // Mostrar GAME OVER sempre que perder, em qualquer fase
-            font.draw(batch, "GAME OVER", WORLD_WIDTH / 2, WORLD_HEIGHT / 2 + 90, 0, Align.center, false);
-            font.draw(batch, "Toque para voltar", WORLD_WIDTH / 2, WORLD_HEIGHT / 2 - 50, 0, Align.center, false);
-        } else if (currentLevel != 3) {
-            // Mostrar VITÓRIA só se for fase 1 ou 2
-            font.draw(batch, "VITORIA!", WORLD_WIDTH / 2, WORLD_HEIGHT / 2 + 90, 0, Align.center, false);
-            font.draw(batch, "Toque para voltar", WORLD_WIDTH / 2, WORLD_HEIGHT / 2 - 50, 0, Align.center, false);
+            if (!playerWon) {
+                font.draw(batch, "GAME OVER", WORLD_WIDTH / 2, WORLD_HEIGHT / 2 + 90, 0, Align.center, false);
+                if (gameOverTimer >= 2f) {
+                    font.draw(batch, "Toque para voltar", WORLD_WIDTH / 2, WORLD_HEIGHT / 2 - 50, 0, Align.center, false);
+                }
+            } else if (currentLevel != 3) {
+                font.draw(batch, "VITORIA!", WORLD_WIDTH / 2, WORLD_HEIGHT / 2 + 90, 0, Align.center, false);
+                if (gameOverTimer >= 2f) {
+                    font.draw(batch, "Toque para voltar", WORLD_WIDTH / 2, WORLD_HEIGHT / 2 - 50, 0, Align.center, false);
+                }
+            }
         }
-    }
         batch.end();
 
         if (DEBUG_MODE) drawDebug();
@@ -369,7 +362,7 @@ public class GameScreen implements Screen {
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, true);
-        camera.position.set(WORLD_WIDTH/2, WORLD_HEIGHT/2, 0);
+        camera.position.set(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 0);
         camera.update();
         float scale = Math.min(
             viewport.getWorldWidth() / WORLD_WIDTH,

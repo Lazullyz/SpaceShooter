@@ -1,6 +1,7 @@
 package ca.grasley.spaceshooter;
 
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -22,7 +23,8 @@ public class CutsceneScreen implements Screen {
     private SpriteBatch batch;
     private Animation<TextureRegion> cutsceneAnimation;
     private float elapsedTime = 0f;
-    private Sound finalSound, seaSound;
+    private Music finalSound;
+    private Music seaSound;
 
     private static final int NUM_FRAMES = 3;
 
@@ -44,8 +46,8 @@ public class CutsceneScreen implements Screen {
     @Override
     public void show() {
         batch = new SpriteBatch();
-        finalSound = Gdx.audio.newSound(Gdx.files.internal("final_song.wav"));
-        seaSound = Gdx.audio.newSound(Gdx.files.internal("som_mar.wav"));
+        finalSound = Gdx.audio.newMusic(Gdx.files.internal("final_song.ogg"));
+        seaSound = Gdx.audio.newMusic(Gdx.files.internal("som_mar.ogg"));
         finalSound.play();
         seaSound.play();
 
