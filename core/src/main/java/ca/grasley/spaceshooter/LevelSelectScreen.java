@@ -8,20 +8,16 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 
 public class LevelSelectScreen implements Screen {
     private MyGame game;
     private SpriteBatch batch;
     private BitmapFont titleFont, levelFont, lockedFont;
-    private GlyphLayout titleLayout;
-    private GlyphLayout[] levelLayouts = new GlyphLayout[3];
-    private GlyphLayout[] lockedLayouts = new GlyphLayout[3];
 
     public LevelSelectScreen(MyGame game) {
         this.game = game;
         batch = new SpriteBatch();
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("VeniceClassic.ttf"));
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("EdgeOfTheGalaxyRegular-OVEa6.otf"));
 
         FreeTypeFontGenerator.FreeTypeFontParameter titleParams = new FreeTypeFontGenerator.FreeTypeFontParameter();
         titleParams.size = 72;
@@ -37,13 +33,6 @@ public class LevelSelectScreen implements Screen {
         lockedFont = generator.generateFont(lockedParams);
 
         generator.dispose();
-
-        titleLayout = new GlyphLayout(titleFont, "Selecione a Fase");
-
-        for (int i = 0; i < 3; i++) {
-            levelLayouts[i] = new GlyphLayout(levelFont, "Fase " + (i+1));
-            lockedLayouts[i] = new GlyphLayout(lockedFont, "Fase " + (i+1) + " (Bloqueada)");
-        }
     }
 
     @Override
@@ -52,53 +41,28 @@ public class LevelSelectScreen implements Screen {
         Gdx.gl.glClearColor(0.1f, 0.1f, 0.2f, 1);
 
         batch.begin();
+        titleFont.draw(batch, "Selecione a Fase", Gdx.graphics.getWidth()/2 - 180, Gdx.graphics.getHeight() - 100);
 
-        float titleX = Gdx.graphics.getWidth() / 2f - titleLayout.width / 2;
-        float titleY = Gdx.graphics.getHeight() - 100;
-        titleFont.draw(batch, titleLayout, titleX, titleY);
+        for (int i = 1; i <= 3; i++) {
+            float yPos = Gdx.graphics.getHeight()/2 - (i-1)*100;
 
-        for (int i = 0; i < 3; i++) {
-            float yPos = Gdx.graphics.getHeight() / 2f - i * 100;
+            if (game.isLevelUnlocked(i)) {
+                levelFont.draw(batch, "Fase " + i, Gdx.graphics.getWidth()/2 - 50, yPos);
 
-            if (game.isLevelUnlocked(i+1)) {
-                float levelX = Gdx.graphics.getWidth() / 2f - levelLayouts[i].width / 2;
-                levelFont.draw(batch, levelLayouts[i], levelX, yPos);
-            } else {
-                float lockedX = Gdx.graphics.getWidth() / 2f - lockedLayouts[i].width / 2;
-                lockedFont.draw(batch, lockedLayouts[i], lockedX, yPos);
-            }
-        }
-
-        batch.end();
-
-        if (Gdx.input.justTouched()) {
-            float touchX = Gdx.input.getX();
-            float touchY = Gdx.graphics.getHeight() - Gdx.input.getY();
-
-            for (int i = 0; i < 3; i++) {
-                if (game.isLevelUnlocked(i+1)) {
-                    float levelX = Gdx.graphics.getWidth() / 2f - levelLayouts[i].width / 2;
-                    float levelY = Gdx.graphics.getHeight() / 2f - i * 100;
-
-                    if (touchX >= levelX && touchX <= levelX + levelLayouts[i].width &&
-                        touchY >= levelY - levelLayouts[i].height && touchY <= levelY) {
-                        game.setScreen(new GameScreen(game, i+1));
+                if (Gdx.input.justTouched()) {
+                    float touchY = Gdx.graphics.getHeight() - Gdx.input.getY();
+                    if (touchY > yPos - 30 && touchY < yPos + 30) {
+                        game.setScreen(new GameScreen(game, i));
                     }
                 }
+            } else {
+                lockedFont.draw(batch, "Fase " + i + " (Bloqueada)", Gdx.graphics.getWidth()/2 - 120, yPos);
             }
         }
+        batch.end();
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             game.setScreen(new MenuScreen(game));
-        }
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        titleLayout.setText(titleFont, "Selecione a Fase");
-        for (int i = 0; i < 3; i++) {
-            levelLayouts[i].setText(levelFont, "Fase " + (i+1));
-            lockedLayouts[i].setText(lockedFont, "Fase " + (i+1) + " (Bloqueada)");
         }
     }
 
@@ -111,6 +75,7 @@ public class LevelSelectScreen implements Screen {
     }
 
     @Override public void show() {}
+    @Override public void resize(int width, int height) {}
     @Override public void pause() {}
     @Override public void resume() {}
     @Override public void hide() {}

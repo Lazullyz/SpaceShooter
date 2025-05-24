@@ -60,9 +60,9 @@ public class GameScreen implements Screen {
         this.game = game;
         this.currentLevel = level;
 
+        // Configurações por fase
         switch(level) {
             case 1:
-<<<<<<< HEAD
                 TRASH_TO_WIN = 15;
                 TIME_LIMIT = 30f;
                 LEFT_LIMIT = WORLD_WIDTH * 0.20F;
@@ -79,18 +79,6 @@ public class GameScreen implements Screen {
                 TIME_LIMIT = 40f;
                 LEFT_LIMIT = 0;
                 RIGHT_LIMIT = WORLD_WIDTH;
-=======
-                TRASH_TO_WIN = 10;
-                TIME_LIMIT = 40f;
-                break;
-            case 2:
-                TRASH_TO_WIN = 20;
-                TIME_LIMIT = 50f;
-                break;
-            case 3:
-                TRASH_TO_WIN = 30;
-                TIME_LIMIT = 50f;
->>>>>>> 4c6170b7ce83647318f8dd5aaaac13398551bd05
                 break;
         }
 
@@ -111,12 +99,7 @@ public class GameScreen implements Screen {
         playerBoat = new Boat(
             WORLD_WIDTH / 2 - boatWidth / 2,
             WORLD_HEIGHT / 10,
-<<<<<<< HEAD
             boatWidth, boatHeight, 450,
-=======
-            boatWidth, boatHeight,
-            500,
->>>>>>> 4c6170b7ce83647318f8dd5aaaac13398551bd05
             textureAtlas.findRegion("SpriteBarco")
         );
 
@@ -125,7 +108,7 @@ public class GameScreen implements Screen {
     }
 
     private void setupHUD() {
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("VeniceClassic.ttf"));
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("EdgeOfTheGalaxyRegular-OVEa6.otf"));
         FreeTypeFontGenerator.FreeTypeFontParameter params = new FreeTypeFontGenerator.FreeTypeFontParameter();
         params.size = 72;
         params.color = Color.WHITE;
@@ -330,28 +313,15 @@ public class GameScreen implements Screen {
         batch.end();
 
         batch.begin();
-        
-        font.draw(batch, "Tempo: " + (int)remainingTime,
-            WORLD_WIDTH / 2, WORLD_HEIGHT - 30,
-            0, Align.center, false);
-
-        font.draw(batch, "Vidas: " + lives,
-            30, WORLD_HEIGHT - 30);
-
-        font.draw(batch, "Lixo: " + collectedTrash + "/" + TRASH_TO_WIN,
-            30, WORLD_HEIGHT - 100);  // 40px abaixo das vidas
+        font.draw(batch, "TEMPO: " + (int)remainingTime, WORLD_WIDTH / 2, WORLD_HEIGHT - 20, 0, Align.center, false);
+        font.draw(batch, "Lixo: " + collectedTrash + "/" + TRASH_TO_WIN, 20, WORLD_HEIGHT - 20);
+        font.draw(batch, "Vidas: " + lives, WORLD_WIDTH - 20, WORLD_HEIGHT - 20, 0, Align.right, false);
 
         if (gameOver) {
             String mainMsg = playerWon ? "VITORIA!" : "GAME OVER";
-            font.draw(batch, mainMsg,
-                WORLD_WIDTH/2, WORLD_HEIGHT/2 + 90,
-                0, Align.center, false);
-
-            font.draw(batch, "Toque para voltar",
-                WORLD_WIDTH/2, WORLD_HEIGHT/2 - 50,
-                0, Align.center, false);
+            font.draw(batch, mainMsg, WORLD_WIDTH/2, WORLD_HEIGHT/2 + 90, 0, Align.center, false);
+            font.draw(batch, "Toque para voltar", WORLD_WIDTH/2, WORLD_HEIGHT/2 -50, 0, Align.center, false);
         }
-
         batch.end();
 
         if (DEBUG_MODE) drawDebug();
