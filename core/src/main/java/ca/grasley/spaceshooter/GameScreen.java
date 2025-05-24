@@ -75,7 +75,7 @@ public class GameScreen implements Screen {
                 RIGHT_LIMIT = WORLD_WIDTH * 0.85F;
                 break;
             case 3:
-                TRASH_TO_WIN = 35;
+                TRASH_TO_WIN = 30;
                 TIME_LIMIT = 40f;
                 LEFT_LIMIT = 0;
                 RIGHT_LIMIT = WORLD_WIDTH;
@@ -163,7 +163,8 @@ public class GameScreen implements Screen {
             viewport.unproject(touchPos);
 
             float targetX = touchPos.x - playerBoat.boundingBox.width / 2;
-            targetX = Math.max(0, Math.min(WORLD_WIDTH - playerBoat.boundingBox.width, targetX));
+            targetX = targetX = Math.max(LEFT_LIMIT, Math.min(RIGHT_LIMIT - playerBoat.boundingBox.width, targetX));
+
 
             float currentX = playerBoat.boundingBox.x;
             float direction = Math.signum(targetX - currentX);
@@ -285,11 +286,18 @@ public class GameScreen implements Screen {
             gameOverSound.play();
         }
         if (collectedTrash >= TRASH_TO_WIN) {
-            playerWon = true;
-            gameOver = true;
-            victorySound.play();
-            game.unlockNextLevel(currentLevel);
-            backgroundMusic.stop();
+            {
+                playerWon = true;
+                gameOver = true;
+                victorySound.play();
+                game.unlockNextLevel(currentLevel);
+                backgroundMusic.stop();
+            }
+            if (currentLevel == 3) {
+                game.setScreen(new CutsceneScreen(game));
+                victorySound.stop();
+
+            }
         }
     }
 
@@ -318,10 +326,16 @@ public class GameScreen implements Screen {
         font.draw(batch, "Vidas: " + lives, WORLD_WIDTH - 20, WORLD_HEIGHT - 20, 0, Align.right, false);
 
         if (gameOver) {
-            String mainMsg = playerWon ? "VITORIA!" : "GAME OVER";
-            font.draw(batch, mainMsg, WORLD_WIDTH/2, WORLD_HEIGHT/2 + 90, 0, Align.center, false);
-            font.draw(batch, "Toque para voltar", WORLD_WIDTH/2, WORLD_HEIGHT/2 -50, 0, Align.center, false);
+        if (!playerWon) {
+            // Mostrar GAME OVER sempre que perder, em qualquer fase
+            font.draw(batch, "GAME OVER", WORLD_WIDTH / 2, WORLD_HEIGHT / 2 + 90, 0, Align.center, false);
+            font.draw(batch, "Toque para voltar", WORLD_WIDTH / 2, WORLD_HEIGHT / 2 - 50, 0, Align.center, false);
+        } else if (currentLevel != 3) {
+            // Mostrar VITÓRIA só se for fase 1 ou 2
+            font.draw(batch, "VITORIA!", WORLD_WIDTH / 2, WORLD_HEIGHT / 2 + 90, 0, Align.center, false);
+            font.draw(batch, "Toque para voltar", WORLD_WIDTH / 2, WORLD_HEIGHT / 2 - 50, 0, Align.center, false);
         }
+    }
         batch.end();
 
         if (DEBUG_MODE) drawDebug();
