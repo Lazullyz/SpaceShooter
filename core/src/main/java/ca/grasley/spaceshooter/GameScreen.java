@@ -19,12 +19,16 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+
+import java.awt.geom.Arc2D;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
 public class GameScreen implements Screen {
     private final float WORLD_WIDTH = 1280;
     private final float WORLD_HEIGHT = 720;
+    private float LEFT_LIMIT;
+    private float RIGHT_LIMIT;
     private int TRASH_TO_WIN;
     private float TIME_LIMIT;
     private final boolean DEBUG_MODE = false;
@@ -59,16 +63,22 @@ public class GameScreen implements Screen {
         // Configurações por fase
         switch(level) {
             case 1:
-                TRASH_TO_WIN = 5;
-                TIME_LIMIT = 60f;
-                break;
-            case 2:
-                TRASH_TO_WIN = 10;
-                TIME_LIMIT = 45f;
-                break;
-            case 3:
                 TRASH_TO_WIN = 15;
                 TIME_LIMIT = 30f;
+                LEFT_LIMIT = WORLD_WIDTH * 0.20F;
+                RIGHT_LIMIT = WORLD_WIDTH * 0.80F;
+                break;
+            case 2:
+                TRASH_TO_WIN = 25;
+                TIME_LIMIT = 40f;
+                LEFT_LIMIT = WORLD_WIDTH * 0.15F;
+                RIGHT_LIMIT = WORLD_WIDTH * 0.85F;
+                break;
+            case 3:
+                TRASH_TO_WIN = 35;
+                TIME_LIMIT = 40f;
+                LEFT_LIMIT = 0;
+                RIGHT_LIMIT = WORLD_WIDTH;
                 break;
         }
 
@@ -89,8 +99,7 @@ public class GameScreen implements Screen {
         playerBoat = new Boat(
             WORLD_WIDTH / 2 - boatWidth / 2,
             WORLD_HEIGHT / 10,
-            boatWidth, boatHeight,
-            300,
+            boatWidth, boatHeight, 450,
             textureAtlas.findRegion("SpriteBarco")
         );
 
@@ -138,13 +147,13 @@ public class GameScreen implements Screen {
 
         if (Gdx.input.isKeyPressed(Input.Keys.A)) {
             playerBoat.updatePosition(
-                Math.max(0, playerBoat.boundingBox.x - speed),
+                Math.max(LEFT_LIMIT, playerBoat.boundingBox.x - speed),
                 playerBoat.boundingBox.y
             );
         }
         if (Gdx.input.isKeyPressed(Input.Keys.D)) {
             playerBoat.updatePosition(
-                Math.min(WORLD_WIDTH - playerBoat.boundingBox.width, playerBoat.boundingBox.x + speed),
+                Math.min(RIGHT_LIMIT - playerBoat.boundingBox.width, playerBoat.boundingBox.x + speed),
                 playerBoat.boundingBox.y
             );
         }
@@ -171,11 +180,22 @@ public class GameScreen implements Screen {
     private void spawnObjects(float delta) {
         float trashSpawnRate = 1f - (currentLevel * 0.1f);
         float obstacleSpawnRate = Math.max(0.5f, 2f - (gameTime / (30f - (currentLevel * 5f))));
+        float obstacleX = 0;
+        float trashX = 0;
+
+        if (gameTime % obstacleSpawnRate < delta) {
+            float size = WORLD_WIDTH / 9f;
+            if (currentLevel == 1 || currentLevel == 2) {
+                obstacleX = LEFT_LIMIT + (float) Math.random() * (RIGHT_LIMIT - LEFT_LIMIT - size);
+            } else {
+                obstacleX = (float) Math.random() * (WORLD_WIDTH - size);
+            }
+        }
 
         if (gameTime % trashSpawnRate < delta) {
             float size = WORLD_WIDTH / 12f;
             trashList.add(new Trash(
-                (float)Math.random() * (WORLD_WIDTH - size),
+                trashX = LEFT_LIMIT + (float)Math.random() * (RIGHT_LIMIT -LEFT_LIMIT - size),
                 WORLD_HEIGHT,
                 size, size,
                 textureAtlas.findRegion(Math.random() > 0.5 ? "Lixo01" : "Lixo02")
@@ -202,7 +222,7 @@ public class GameScreen implements Screen {
             }
 
             Obstacle obstacle = new Obstacle(
-                (float)Math.random() * (WORLD_WIDTH - size),
+                obstacleX,
                 WORLD_HEIGHT,
                 size, size,
                 textureAtlas.findRegion(type),
