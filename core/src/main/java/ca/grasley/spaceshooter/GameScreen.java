@@ -75,7 +75,7 @@ public class GameScreen implements Screen {
                 RIGHT_LIMIT = WORLD_WIDTH * 0.85F;
                 break;
             case 3:
-                TRASH_TO_WIN = 30;
+                TRASH_TO_WIN = 35;
                 TIME_LIMIT = 40f;
                 LEFT_LIMIT = 0;
                 RIGHT_LIMIT = WORLD_WIDTH;
@@ -88,6 +88,7 @@ public class GameScreen implements Screen {
         batch = new SpriteBatch();
         shapeRenderer = new ShapeRenderer();
         textureAtlas = new TextureAtlas("arts.atlas");
+
 
         initializeGameObjects();
         setupHUD();
@@ -108,7 +109,7 @@ public class GameScreen implements Screen {
     }
 
     private void setupHUD() {
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("EdgeOfTheGalaxyRegular-OVEa6.otf"));
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("VeniceClassic.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter params = new FreeTypeFontGenerator.FreeTypeFontParameter();
         params.size = 72;
         params.color = Color.WHITE;

@@ -6,9 +6,13 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
@@ -23,10 +27,15 @@ public class MenuScreen implements Screen {
     private final float WORLD_WIDTH = 1280;
     private final float WORLD_HEIGHT = 720;
 
+    // Animação do fundo
+    private Animation<TextureRegion> backgroundAnimation;
+    private float elapsedTime = 0f;
+    private static final int NUM_FRAMES = 11; // <-- Quantidade de frames da animação
+
     public MenuScreen(MyGame game) {
         this.game = game;
 
-        // Configura câmera e viewport
+        // Câmera e viewport
         camera = new OrthographicCamera();
         viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
         viewport.apply();
@@ -34,7 +43,9 @@ public class MenuScreen implements Screen {
         camera.update();
 
         batch = new SpriteBatch();
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("EdgeOfTheGalaxyRegular-OVEa6.otf"));
+
+        // Fonte Venice
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("VeniceClassic.ttf"));
 
         FreeTypeFontGenerator.FreeTypeFontParameter titleParams = new FreeTypeFontGenerator.FreeTypeFontParameter();
         titleParams.size = 100;
@@ -47,33 +58,55 @@ public class MenuScreen implements Screen {
         menuFont = generator.generateFont(menuParams);
 
         generator.dispose();
+
+        // Animação do fundo
+        TextureRegion[] frames = new TextureRegion[NUM_FRAMES];
+        for (int i = 1; i <= NUM_FRAMES; i++) {
+            String filename = String.format("menu_bg/frame-%02d.gif", i);
+            Texture texture = new Texture(Gdx.files.internal(filename));
+            frames[i - 1] = new TextureRegion(texture);
+        }
+
+        backgroundAnimation = new Animation<>(0.2f, frames);
+        backgroundAnimation.setPlayMode(Animation.PlayMode.LOOP);
     }
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(0.1f, 0.1f, 0.2f, 1);
+        elapsedTime += delta;
+
+        Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         batch.setProjectionMatrix(camera.combined);
 
+        TextureRegion currentFrame = backgroundAnimation.getKeyFrame(elapsedTime);
+
         batch.begin();
+        // Desenha fundo animado
+        batch.draw(currentFrame, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+
+        // Título
         titleFont.draw(batch, "Water Guardians",
             0,
             WORLD_HEIGHT / 2 + 100,
             WORLD_WIDTH,
-            com.badlogic.gdx.utils.Align.center,
+            Align.center,
             false);
 
+        // Texto do menu
         menuFont.draw(batch, "Pressione para Jogar",
             0,
             WORLD_HEIGHT / 2 - 50,
             WORLD_WIDTH,
-            com.badlogic.gdx.utils.Align.center,
+            Align.center,
             false);
         batch.end();
 
+        // Verifica entrada
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.justTouched()) {
             game.setScreen(new LevelSelectScreen(game));
+            dispose();
         }
     }
 
@@ -89,6 +122,11 @@ public class MenuScreen implements Screen {
         batch.dispose();
         titleFont.dispose();
         menuFont.dispose();
+
+        // Libera os frames da animação
+        for (TextureRegion frame : backgroundAnimation.getKeyFrames()) {
+            frame.getTexture().dispose();
+        }
     }
 
     @Override public void show() {}
